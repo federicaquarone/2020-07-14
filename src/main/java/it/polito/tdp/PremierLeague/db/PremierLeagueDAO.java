@@ -5,8 +5,13 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+
 import it.polito.tdp.PremierLeague.model.Action;
+
 import it.polito.tdp.PremierLeague.model.Match;
 import it.polito.tdp.PremierLeague.model.Player;
 import it.polito.tdp.PremierLeague.model.Team;
@@ -36,9 +41,9 @@ public class PremierLeagueDAO {
 		}
 	}
 	
-	public List<Team> listAllTeams(){
+	public void listAllTeams(Map<Integer, Team> idMap){
 		String sql = "SELECT * FROM Teams";
-		List<Team> result = new ArrayList<Team>();
+		
 		Connection conn = DBConnect.getConnection();
 
 		try {
@@ -46,15 +51,17 @@ public class PremierLeagueDAO {
 			ResultSet res = st.executeQuery();
 			while (res.next()) {
 
+				if(!idMap.containsKey(res.getInt("TeamID"))) {
 				Team team = new Team(res.getInt("TeamID"), res.getString("Name"));
-				result.add(team);
+				idMap.put(team.getTeamID(),team);
+				}
 			}
 			conn.close();
-			return result;
+			
 			
 		} catch (SQLException e) {
 			e.printStackTrace();
-			return null;
+			return;
 		}
 	}
 	
@@ -112,4 +119,73 @@ public class PremierLeagueDAO {
 		}
 	}
 	
+	/*public List<Adiacenza> getArchi(Map<Integer,Team> idMap) {
+		String sql="SELECT t1.TeamID, t2.TeamID, m.ResultOfTeamHome as r "
+				+ "FROM teams t1, teams t2, matches m "
+				+ "WHERE t1.TeamID>t2.TeamID "
+				+ "AND t1.TeamID=m.TeamHomeID AND t2.TeamID=m.TeamAwayID "
+				+ "AND m.ResultOfTeamHome >0";
+		
+		List<Adiacenza> result= new LinkedList<Adiacenza>();
+		Connection conn = DBConnect.getConnection();
+
+		try {
+			PreparedStatement st = conn.prepareStatement(sql);
+			ResultSet res = st.executeQuery();
+			while (res.next()) {
+				int pesoT1=0;
+				int pesoT2=0;
+                if(res.getInt("r")>0) {
+                	//vince squadra in casa
+                	pesoT1 +=3;
+                	pesoT2 +=0;
+                }
+                if(res.getInt("r")==0) {
+                	pesoT1+=1;
+                	pesoT2+=1;
+                	
+                }
+                if(res.getInt("r")<0) {
+                	pesoT1+=0;
+                	pesoT2+=3;
+                }
+				 int delta= pesoT1-pesoT2;
+				 result.add(new Adiacenza(idMap.get(res.getInt("t1.TeamID")),idMap.get(res.getInt("t2.TeamID")) , delta));
+				 
+
+			}
+			conn.close();
+			return result;
+			
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return null;
+		}
+		
+	}*/
+
+	public List<Team> getVertici(Map<Integer, Team> idMap) {
+		String sql="select DISTINCT t.TeamID  "
+				+ "FROM teams t ";
+		List<Team> result= new LinkedList<Team>();
+		
+		Connection conn = DBConnect.getConnection();
+
+		try {
+			PreparedStatement st = conn.prepareStatement(sql);
+			ResultSet res = st.executeQuery();
+			while (res.next()) {
+				if(idMap.containsKey(res.getInt("t.TeamID"))) { //OCCHIO QUA!!
+					result.add(idMap.get(res.getInt("t.TeamID")));
+				}
+			
+			}
+			conn.close();
+			return result;
+			
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
 }
